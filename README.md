@@ -63,12 +63,11 @@ The SD interface is the [`sdcard6502`](https://github.com/ryaneroth/sdcard6502)
 hardware used by the [Adventure port](https://github.com/ryaneroth/Adventure);
 the driver is vendored in `vendor/sdcard6502`.
 
-`vendor/sdcard6502/src/libfat32.s` carries two local fixes that are not in
-the upstream `sdcard6502` repository yet: corrected cluster reading, and
-reuse of deleted directory entries when creating a file. Without the second
-fix, every level-file rewrite adds a directory entry, and the root directory
-eventually fills up. Commit these to `sdcard6502` (or keep the vendored
-copy) before updating the submodule.
+The game needs `sdcard6502` at or after the fixes merged in its pull
+request #3, which fix reading the final cluster of a file, contiguous-cluster detection, and
+reuse of deleted directory entries. The game needs the last fix: it deletes
+and re-creates level files, and without reuse the root directory eventually
+fills up.
 
 ## Build
 
