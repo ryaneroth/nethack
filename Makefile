@@ -13,7 +13,7 @@ BUILD_ID := $(shell expr $$(date +%s) % 65000 + 1)
 all: $(TARGET)
 
 $(TARGET): kim1_io.s nethack_sd.s nethack.c kim1rom.cfg vendor/sdcard6502/src/libsd.s vendor/sdcard6502/src/libfat32.s
-	$(CL65) -t none -C kim1rom.cfg -Osir --static-locals -DBUILD_ID=$(BUILD_ID) -m nethack.map -Ln nethack.lbl -o $@ kim1_io.s nethack_sd.s nethack.c
+	$(CL65) -t none -C kim1rom.cfg -Osir --static-locals -DBUILD_ID=$(BUILD_ID)u -m nethack.map -Ln nethack.lbl -o $@ kim1_io.s nethack_sd.s nethack.c
 
 # MOS Technology paper-tape images of both halves, for loading over serial.
 ptp: $(TARGET)
