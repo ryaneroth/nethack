@@ -1,0 +1,39 @@
+NetHack for the KIM-1 -- commands
+
+Movement:  y k u     Shift+direction (Y K U H L B J N) runs.
+            \|/      A number before s or . repeats it (20s).
+           h-.-l     Moving into a monster attacks it; moving into
+            /|\      your pet swaps places with it.
+           b j n
+
+  ,  pick up everything here       d  drop an item
+  i  show inventory                :  look at what is here
+  w  wield a weapon (- for none)   W  wear armor
+  T  take off armor                q  quaff (drink) a potion
+  r  read a scroll                 e  eat something
+  z  zap a wand                    s  search for hidden traps
+  .  rest one turn                 E  engrave in the dust
+  <  go up stairs                  >  go down stairs
+  #pray  ask your god for help (only when in real trouble)
+  S  save the game to the SD card and stop
+  Q  quit without saving           O  toggle ANSI screen clearing
+  ?  this help                     Ctrl-R  redraw the screen
+
+Symbols:
+  @ you       f your kitten     - | walls     . floor     # corridor
+  + door      < > stairs        ^ trap        $ gold      ) weapon
+  [ armor     ! potion          ? scroll      / wand      % food
+  " the Amulet of Yendor        letters are monsters
+
+Your quest: find the Amulet of Yendor on dungeon level 10 and carry it
+back up the stairs from level 1.
+
+Tips:
+  Potions, scrolls and wands start unidentified; using one may tell
+  you what it is.  Some armor and weapons are cursed and cannot be
+  removed.  Eat before you faint.  Do not melee the floating eye.
+  Monsters will not attack you in melee while you stand on a square
+  engraved with Elbereth, but attacking from it rubs it out.
+  Levels you leave are saved to the SD card, so they are still there
+  when you come back.  Saving with S also uses the card; the save is
+  removed when you restore it.
