@@ -60,5 +60,14 @@ for i in range(0, len(rootdata), 32):
         if c in owner:
             print(f"   OVERLAP cluster {c} also in {owner[c]}")
         owner[c] = name
+# Every cluster marked in use should belong to a file (or the root), and
+# every chain should end with an end-of-chain mark.
+for c in chain(root):
+    owner.setdefault(c, "root")
+used = [c for c in range(2, 2000) if fat(c) != 0]
+leaked = [c for c in used if c not in owner]
+print("clusters in use but owned by no file:", leaked[:20], "..." if len(leaked) > 20 else "")
+bad_end = sorted({n for c, n in owner.items() if 0 < fat(c) < 2 or 2 <= fat(c) < 0x0FFFFFF8 and fat(c) not in owner})
+print("chains with a bad end:", bad_end)
 mism = [c for c in range(2, 600) if fat(c, 0) != fat(c, 1)]
 print("FAT copies differ at clusters:", mism[:20])

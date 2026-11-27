@@ -25,7 +25,12 @@ _nh_sd_init:
         lda     #0
         sta     sd_generation
         sta     sd_generation+1
-        jsr     via_init
+        ; Port A only.  The driver's via_init would also make all of port B
+        ; outputs; PB7 carries the $1700 6530's timer interrupt, and on a
+        ; KIM-1 with PB7 jumpered to IRQ (A-15 to E-4) an output there could
+        ; hold IRQ down.  The driver does not use port B.
+        lda     #PORTA_OUTPUTPINS
+        sta     DDRA
         jsr     sd_init
         bcs     @failed
         lda     #0
