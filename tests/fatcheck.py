@@ -14,6 +14,8 @@ fatsz = struct.unpack_from("<I", img, bs + 36)[0]
 root = struct.unpack_from("<I", img, bs + 44)[0]
 fat0 = (part + rsv) * SEC
 data0 = part + rsv + nfat * fatsz
+totsec = struct.unpack_from("<I", img, bs + 32)[0]
+nclus = min(fatsz * SEC // 4, (totsec - (data0 - part)) // spc + 2)
 
 
 def fat(c, n=0):
@@ -27,7 +29,7 @@ def cl(c):
 
 def chain(c):
     out = []
-    while 2 <= c < 0x0FFFFFF8 and len(out) < 10000:
+    while 2 <= c < 0x0FFFFFF8 and len(out) < nclus:
         out.append(c)
         c = fat(c)
     return out
@@ -64,7 +66,7 @@ for i in range(0, len(rootdata), 32):
 # every chain should end with an end-of-chain mark.
 for c in chain(root):
     owner.setdefault(c, "root")
-used = [c for c in range(2, 2000) if fat(c) != 0]
+used = [c for c in range(2, nclus) if fat(c) != 0]
 leaked = [c for c in used if c not in owner]
 print("clusters in use but owned by no file:", leaked[:20], "..." if len(leaked) > 20 else "")
 bad_end = sorted({n for c, n in owner.items() if 0 < fat(c) < 2 or 2 <= fat(c) < 0x0FFFFFF8 and fat(c) not in owner})

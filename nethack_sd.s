@@ -174,7 +174,7 @@ _nh_sd_write_sector:
         jsr     sd_bump_generation
         lda     fat32_pendingsectors
         bne     @write
-        jsr     sd_extend_file
+        jsr     fat32_extendfile        ; next cluster, linked in
         bcs     @write_failed
 @write:
         jsr     fat32_writenextsector
@@ -186,90 +186,6 @@ _nh_sd_write_sector:
 @write_failed:
         lda     #1
         ldx     #0
-        sec
-        rts
-
-sd_extend_file:
-        lda     fat32_lastcluster
-        sta     sd_old_cluster
-        lda     fat32_lastcluster+1
-        sta     sd_old_cluster+1
-        lda     fat32_lastcluster+2
-        sta     sd_old_cluster+2
-        lda     fat32_lastcluster+3
-        sta     sd_old_cluster+3
-        lda     #1
-        sta     fat32_bytesremaining
-        lda     #0
-        sta     fat32_bytesremaining+1
-        sta     fat32_bytesremaining+2
-        sta     fat32_bytesremaining+3
-        jsr     fat32_allocatefile
-        bcc     :+
-        jmp     @failed
-:
-        lda     fat32_filecluster
-        sta     sd_new_cluster
-        lda     fat32_filecluster+1
-        sta     sd_new_cluster+1
-        lda     fat32_filecluster+2
-        sta     sd_new_cluster+2
-        lda     fat32_filecluster+3
-        sta     sd_new_cluster+3
-
-        lda     sd_old_cluster
-        sta     fat32_nextcluster
-        lda     sd_old_cluster+1
-        sta     fat32_nextcluster+1
-        lda     sd_old_cluster+2
-        sta     fat32_nextcluster+2
-        lda     sd_old_cluster+3
-        sta     fat32_nextcluster+3
-        sec
-        jsr     fat32_seekcluster
-        tya
-        pha
-        lda     sd_new_cluster
-        sta     (zp_sd_address),y
-        iny
-        lda     sd_new_cluster+1
-        sta     (zp_sd_address),y
-        iny
-        lda     sd_new_cluster+2
-        sta     (zp_sd_address),y
-        iny
-        lda     sd_new_cluster+3
-        and     #$0f
-        sta     (zp_sd_address),y
-        pla
-        tay
-        jsr     fat32_updatefat
-        bcc     :+
-        jmp     @failed
-:
-
-        lda     sd_new_cluster
-        sta     fat32_lastcluster
-        lda     sd_new_cluster+1
-        sta     fat32_lastcluster+1
-        lda     sd_new_cluster+2
-        sta     fat32_lastcluster+2
-        lda     sd_new_cluster+3
-        sta     fat32_lastcluster+3
-        sta     fat32_nextcluster+3
-        lda     sd_new_cluster
-        sta     fat32_nextcluster
-        lda     sd_new_cluster+1
-        sta     fat32_nextcluster+1
-        lda     sd_new_cluster+2
-        sta     fat32_nextcluster+2
-        lda     sd_new_cluster+3
-        sta     fat32_nextcluster+3
-        clc
-        jsr     fat32_seekcluster
-        clc
-        rts
-@failed:
         sec
         rts
 
@@ -302,6 +218,7 @@ _nh_sd_finish_write:
         lda     fat32_bytesremaining+3
         sta     (zp_sd_address),y
         jsr     fat32_writecurrentsector
+        bcs     @finish_failed
         lda     #0
         ldx     #0
         clc
@@ -364,10 +281,6 @@ sd_file_size:
         .res    4
 sd_generation:
         .res    2
-sd_old_cluster:
-        .res    4
-sd_new_cluster:
-        .res    4
 sd_filename:
         .res    11
 sd_initialized:
