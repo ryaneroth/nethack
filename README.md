@@ -26,13 +26,14 @@ ROM at `$A000`. One link produces two images that carry the same build stamp:
 
 | Image | Address | Contents |
 | --- | --- | --- |
-| `nethack.bin` | `$A000` (ROM) | Startup, cc65 runtime, SD/FAT32 driver, the main game loop, display, movement, combat and monsters |
-| `nethack-ram.bin` | `$2000` (RAM) | Object and monster tables, level generation, item commands, new-game and end-of-game code |
+| `nethack.bin` | `$A000` (ROM) | Startup, cc65 runtime, SD/FAT32 driver, the main game loop, display, movement and combat |
+| `nethack-ram.bin` | `$2000` (RAM) | Object and monster tables, monster turns, level generation, saving and loading, item commands, new-game and end-of-game code |
 
 Game state follows the RAM image, and the cc65 software stack uses
 `$9800-$9FFF`. The linker map (`nethack.map`) shows the current sizes; at the
-time of writing the ROM image is about 23 KB and the RAM image about 12.5 KB,
-leaving roughly 14 KB of RAM free.
+time of writing the ROM image is about 23 KB and the RAM image about 16 KB;
+with the game state that ends at about `$6E00`, leaving roughly 10 KB of RAM
+free.
 
 At start-up the ROM checks whether the matching RAM image is already in
 memory. If not, it loads `NETHACK.BIN` from the SD card. A stale
@@ -63,11 +64,10 @@ The SD interface is the [`sdcard6502`](https://github.com/ryaneroth/sdcard6502)
 hardware used by the [Adventure port](https://github.com/ryaneroth/Adventure);
 the driver is vendored in `vendor/sdcard6502`.
 
-The game needs `sdcard6502` at or after the fixes merged in its pull
-request #3, which fix reading the final cluster of a file, contiguous-cluster detection, and
-reuse of deleted directory entries. The game needs the last fix: it deletes
-and re-creates level files, and without reuse the root directory eventually
-fills up.
+`nethack_sd.s` is a thin layer over the driver's file API (`fat32_open`,
+`fat32_read`, `fat32_write`, `fat32_close`, `fat32_delete`); see the
+driver's `doc/FAT32Library.md`. It works with SDHC and standard-capacity
+cards. Level and save files are written with their exact length.
 
 ## Build
 

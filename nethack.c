@@ -21,12 +21,13 @@ typedef unsigned int u16;
 extern u8 __fastcall__ kim_getc(void);
 extern void __fastcall__ kim_putc(u8 ch);
 extern u8 __fastcall__ nh_sd_init(void);
-extern u8 __fastcall__ nh_sd_open_file(const char *name83);
+extern u8 __fastcall__ nh_sd_open_file(const char *path);
 extern int __fastcall__ nh_sd_read_byte(void);
-extern u8 __fastcall__ nh_sd_create_file(const char *name83);
-extern u8 __fastcall__ nh_sd_write_sector(const void *buffer);
-extern u8 __fastcall__ nh_sd_finish_write(unsigned long *size);
-extern u8 __fastcall__ nh_sd_delete_file(const char *name83);
+extern u8 __fastcall__ nh_sd_create_file(const char *path);
+extern u8 __fastcall__ nh_sd_write(const void *buffer);  /* nh_sd_count bytes */
+extern u8 __fastcall__ nh_sd_close(void);
+extern u8 __fastcall__ nh_sd_delete_file(const char *path);
+extern u16 nh_sd_count;
 
 #define MAP_W 64
 #define MAP_H 21
@@ -295,10 +296,9 @@ static s8 ddx, ddy, ddz;
 static u8 rx, ry;
 static u8 sect[512];
 static u16 sp;
-static unsigned long fsize;
-static char lname[] = "LEVEL01 DAT";
-static const char savename[] = "NHSAVE  DAT";
-static const char helpname[] = "NHHELP  TXT";
+static char lname[] = "LEVEL01.DAT";
+static const char savename[] = "NHSAVE.DAT";
+static const char helpname[] = "NHHELP.TXT";
 
 static const s8 xdir[8] = {-1, 0, 0, 1, -1, 1, -1, 1};
 static const s8 ydir[8] = {0, 1, -1, 0, -1, -1, 1, 1};
@@ -1134,6 +1134,8 @@ static void uattack(Mon *m)
     }
 }
 
+#pragma code-name (push, "RCODE")
+#pragma rodata-name (push, "RRODATA")
 static void mattacku(Mon *m)
 {
     const MDef *d = &md[m->typ];
@@ -1362,8 +1364,6 @@ static u8 hostile_near(void)
     return 0;
 }
 
-#pragma code-name (push, "RCODE")
-#pragma rodata-name (push, "RRODATA")
 
 /* ------------------------------------------------------- level generation */
 
@@ -1552,8 +1552,6 @@ static void gen_level(void)
     }
 }
 
-#pragma rodata-name (pop)
-#pragma code-name (pop)
 
 /* --------------------------------------------------------------- SD files */
 
@@ -1561,9 +1559,9 @@ static u8 wr_bytes(const u8 *p, u16 n)
 {
     while (n--) {
         sect[sp++] = *p++;
-        ++fsize;
         if (sp == sizeof(sect)) {
-            if (nh_sd_write_sector(sect)) {
+            nh_sd_count = sp;
+            if (nh_sd_write(sect)) {
                 return 0;
             }
             sp = 0;
@@ -1574,26 +1572,19 @@ static u8 wr_bytes(const u8 *p, u16 n)
 
 static u8 wr_file(const char *name, u8 with_game)
 {
+    u8 ok;
+
     sp = 0;
-    fsize = 0;
     if (nh_sd_create_file(name)) {
         return 0;
     }
-    if (with_game && !wr_bytes((const u8 *)&g, sizeof(g))) {
-        return 0;
+    ok = (!with_game || wr_bytes((const u8 *)&g, sizeof(g))) &&
+         wr_bytes((const u8 *)&lev, sizeof(lev));
+    if (ok && sp) {
+        nh_sd_count = sp;
+        ok = !nh_sd_write(sect);
     }
-    if (!wr_bytes((const u8 *)&lev, sizeof(lev))) {
-        return 0;
-    }
-    if (sp) {
-        while (sp < sizeof(sect)) {
-            sect[sp++] = 0;
-        }
-        if (nh_sd_write_sector(sect)) {
-            return 0;
-        }
-    }
-    return nh_sd_finish_write(&fsize) == 0;
+    return !nh_sd_close() && ok;
 }
 
 static u8 rd_bytes(u8 *p, u16 n)
@@ -1650,6 +1641,9 @@ static u8 restore(void)
 }
 
 /* ----------------------------------------------------------------- display */
+
+#pragma rodata-name (pop)
+#pragma code-name (pop)
 
 static const char *rank(void)
 {
@@ -3143,7 +3137,7 @@ static u8 play(void)
 
 /* Load the RAM half of the program from the SD card unless it is already
  * in memory (for example, loaded by paper tape). */
-static const char imgname[] = "NETHACK BIN";
+static const char imgname[] = "NETHACK.BIN";
 extern u8 _DATA_RUN__[];
 extern u8 _DATA_SIZE__[];
 

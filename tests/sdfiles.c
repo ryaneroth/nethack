@@ -12,19 +12,19 @@ typedef unsigned int u16;
 
 extern void __fastcall__ kim_putc(u8 ch);
 extern u8 __fastcall__ nh_sd_init(void);
-extern u8 __fastcall__ nh_sd_open_file(const char *name83);
+extern u8 __fastcall__ nh_sd_open_file(const char *path);
 extern int __fastcall__ nh_sd_read_byte(void);
-extern u8 __fastcall__ nh_sd_create_file(const char *name83);
-extern u8 __fastcall__ nh_sd_write_sector(const void *buffer);
-extern u8 __fastcall__ nh_sd_finish_write(unsigned long *size);
+extern u8 __fastcall__ nh_sd_create_file(const char *path);
+extern u8 __fastcall__ nh_sd_write(const void *buffer);
+extern u8 __fastcall__ nh_sd_close(void);
+extern u16 nh_sd_count;
 
 #define NFILES 10
 #define SIZE 1734 /* the size of a level file: four sectors */
 
 static u8 sect[512];
-static char name[] = "TESTF00 DAT";
+static char name[] = "TESTF00.DAT";
 static u8 version[NFILES];
-static unsigned long fsize;
 
 static void ps(const char *s)
 {
@@ -62,26 +62,23 @@ static u8 write_file(u8 file)
     if (nh_sd_create_file(name)) {
         return 0;
     }
-    fsize = 0;
     for (i = 0; i < SIZE; ++i) {
         sect[n++] = pattern(file, i);
-        ++fsize;
         if (n == sizeof(sect)) {
-            if (nh_sd_write_sector(sect)) {
+            nh_sd_count = n;
+            if (nh_sd_write(sect)) {
                 return 0;
             }
             n = 0;
         }
     }
     if (n) {
-        while (n < sizeof(sect)) {
-            sect[n++] = 0;
-        }
-        if (nh_sd_write_sector(sect)) {
+        nh_sd_count = n;
+        if (nh_sd_write(sect)) {
             return 0;
         }
     }
-    return nh_sd_finish_write(&fsize) == 0;
+    return nh_sd_close() == 0;
 }
 
 static u8 check_file(u8 file)
